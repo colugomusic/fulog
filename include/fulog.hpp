@@ -108,7 +108,7 @@ auto get_home_dir() -> fs::path {
 
 inline
 auto get_data_home_dir() -> fs::path {
-	return get_home() / "Library" / "Application Support";
+	return get_home_dir() / "Library" / "Application Support";
 }
 
 #else // linux ///////////////////////////////////////////////////
