@@ -24,21 +24,15 @@ namespace fu::detail::os {
 namespace fs = std::filesystem;
 
 inline
-auto win32_utf16_to_utf8(std::wstring_view wstr) -> std::string {
-	std::string res;
-	// If the 6th parameter is 0 then WideCharToMultiByte returns the number of bytes needed to store the result.
-	int actualSize = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), -1, nullptr, 0, nullptr, nullptr);
-	if (actualSize > 0) {
-		//If the converted UTF-8 string could not be in the initial buffer. Allocate one that can hold it.
-		std::vector<char> buffer(actualSize);
-		actualSize = WideCharToMultiByte(CP_UTF8, 0, wstr.data(), -1, &buffer[0], static_cast<int>(buffer.size()), nullptr, nullptr);
-		res = buffer.data();
+auto shorten(std::wstring_view s) -> std::string {
+	if (s.empty()) {
+		return {};
 	}
-	if (actualSize == 0) {
-		// WideCharToMultiByte return 0 for errors.
-		throw std::runtime_error("UTF16 to UTF8 failed with error code: " + std::to_string(GetLastError()));
-	}
-	return res;
+	int n = WideCharToMultiByte(CP_UTF8, 0, s.data(), int(s.size()), NULL, 0, NULL, NULL);
+	std::string buf;
+	buf.resize(n);
+	WideCharToMultiByte(CP_UTF8, 0, s.data(), int(s.size()), &buf[0], n, NULL, NULL);
+	return buf;
 }
 
 inline 
@@ -54,7 +48,7 @@ auto get_known_folder(REFKNOWNFOLDERID folder_id, std::string_view error_msg) ->
 	if (!SUCCEEDED(hr)) {
 		throw std::runtime_error(std::string(error_msg));
 	}
-	return win32_utf16_to_utf8(wsz_path);
+	return shorten(wsz_path);
 }
 
 inline
@@ -87,7 +81,6 @@ auto get_home_dir() -> fs::path {
 	int uid = getuid();
 	const char* home_env = std::getenv("HOME");
 	if (uid != 0 && home_env) {
-		//We only acknowlegde HOME if not root.
 		res = home_env;
 		return res;
 	}
@@ -121,18 +114,15 @@ auto get_data_home_dir() -> fs::path {
 #else // linux ///////////////////////////////////////////////////
 
 inline
-auto throw_on_relative(std::string_view env_name, std::string_view env_value) -> void {
-	if (env_value[0] != '/') {
-		throw std::runtime_error(std::format("Environment \"{}\" does not start with '/'. XDG specifies that the value must be absolute. The current value is: \"{}\"", env_name, env_value));
-	}
-}
-
-inline
 auto get_linux_folder_default(std::string env_name, const fs::path& default_relative_path) -> fs::path {
+	static constexpr auto ERR_ENV_NO_FWDSLASH =
+		"Environment \"{}\" does not start with '/'. XDG specifies that the value must be absolute. The current value is: \"{}\"";
 	std::string res;
 	const char* temp_res = std::getenv(env_name);
 	if (temp_res) {
-		throw_on_relative(env_name, temp_res);
+		if (temp_res[0] != '/') {
+			throw std::runtime_error(std::format(ERR_ENV_NO_FWDSLASH, env_name, temp_res));
+		}
 		res = temp_res;
 		return res;
 	}
@@ -202,12 +192,13 @@ auto get_file_path() -> fs::path {
 
 inline
 auto open_file() -> void {
-	if (!fs::exists(get_file_path().parent_path())) {
+	const auto path = get_file_path();
+	if (!fs::exists(path.parent_path())) {
 		fs::create_directories(get_file_path().parent_path());
 	}
-	global::file.open(get_file_path(), std::ios::app);
+	global::file.open(path, std::ios::app);
 	if (!global::file.is_open()) {
-		throw std::runtime_error("Failed to open log file");
+		throw std::runtime_error(std::format("Could not open file: {}", path.string()));
 	}
 }
 
