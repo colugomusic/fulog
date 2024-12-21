@@ -5,6 +5,6 @@ set(fulog-src-files
 )
 add_library(fulog INTERFACE)
 add_library(fulog::fulog ALIAS fulog)
-target_sources(fulog ${fulog-src-files})
+target_sources(fulog INTERFACE ${fulog-src-files})
 target_include_directories(fulog INTERFACE ${CMAKE_CURRENT_LIST_DIR}/include)
 set_target_properties(fulog PROPERTIES CXX_STANDARD 20)
