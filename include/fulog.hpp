@@ -126,7 +126,7 @@ auto get_linux_folder_default(std::string env_name, const fs::path& default_rela
 		res = temp_res;
 		return res;
 	}
-	res = get_home() / default_relative_path;
+	res = get_home_dir() / default_relative_path;
 	return res;
 }
 
