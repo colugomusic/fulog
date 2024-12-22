@@ -114,11 +114,11 @@ auto get_data_home_dir() -> fs::path {
 #else // linux ///////////////////////////////////////////////////
 
 inline
-auto get_linux_folder_default(std::string env_name, const fs::path& default_relative_path) -> fs::path {
+auto get_linux_folder_default(std::string_view env_name, const fs::path& default_relative_path) -> fs::path {
 	static constexpr auto ERR_ENV_NO_FWDSLASH =
 		"Environment \"{}\" does not start with '/'. XDG specifies that the value must be absolute. The current value is: \"{}\"";
 	std::string res;
-	const char* temp_res = std::getenv(env_name);
+	const char* temp_res = std::getenv(env_name.data());
 	if (temp_res) {
 		if (temp_res[0] != '/') {
 			throw std::runtime_error(std::format(ERR_ENV_NO_FWDSLASH, env_name, temp_res));
