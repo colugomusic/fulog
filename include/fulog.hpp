@@ -291,7 +291,7 @@ auto set_timestamp_format(std::string_view format) -> void {
 inline
 auto delete_old_files(std::chrono::system_clock::duration older_than) -> void {
 	auto lock = std::lock_guard{detail::global::mutex};
-	detail::delete_old_files(detail::resolve_dir(), older_than);
+	detail::delete_old_files(detail::resolve_dir() / detail::resolve_app_name(), older_than);
 }
 
 inline
