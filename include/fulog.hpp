@@ -156,6 +156,8 @@ inline std::string timestamp_format;
 
 namespace fu::detail {
 
+namespace fs = std::filesystem;
+
 inline static const     auto DEFAULT_DIR              = os::get_data_home_dir();
 inline static constexpr auto DEFAULT_APP_NAME         = "fulog";
 inline static const     auto DEFAULT_LOG_NAME         = std::to_string(os::get_pid());
